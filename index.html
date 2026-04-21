@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECT474 Entrepreneurship • Study Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+        body { font-family: 'Inter', system_ui, sans-serif; }
+        .title-font { font-family: 'Space Grotesk', sans-serif; }
+        .table-row { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .table-row:hover { background-color: #1f2937; transform: translateX(4px); }
+        .table-row.completed { opacity: 0.65; }
+        .question-text { transition: all 0.3s ease; }
+        .table-row.completed .question-text { text-decoration: line-through; color: #9ca3af; }
+        .progress-bar { transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .tab-active { border-bottom: 3px solid #f59e0b; color: white; }
+        .high-yield-badge { background-color: #f59e0b; color: black; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-200 min-h-screen">
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="title-font text-4xl font-semibold text-white flex items-center gap-3">
+                    <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                    ECT474 Entrepreneurship
+                </h1>
+                <p class="text-xl text-gray-400 mt-1">Study Planner – All + High Yield Master Questions</p>
+            </div>
+            <button onclick="resetAllProgress()" 
+                    class="flex items-center gap-2 px-5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-2xl text-sm font-medium transition-colors">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>Reset All Progress</span>
+            </button>
+        </div>
+
+        <!-- TABS -->
+        <div class="flex border-b border-gray-800 mb-6">
+            <button onclick="switchTab(0)" id="tab-0" class="tab-active flex-1 md:flex-none px-8 py-4 text-lg font-medium flex items-center gap-2">
+                <i class="fa-solid fa-list"></i> All Questions (150)
+            </button>
+            <button onclick="switchTab(1)" id="tab-1" class="flex-1 md:flex-none px-8 py-4 text-lg font-medium flex items-center gap-2">
+                <i class="fa-solid fa-fire"></i> High Yield Questions
+            </button>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+                <p class="text-gray-400 text-sm">Questions</p>
+                <p id="total-questions" class="text-5xl font-semibold text-white mt-2">150</p>
+                <div class="mt-4 h-2 bg-gray-800 rounded-2xl overflow-hidden">
+                    <div id="progress-bar" class="progress-bar h-2 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-2xl" style="width: 0%"></div>
+                </div>
+                <p id="progress-text" class="text-sm text-gray-400 mt-2 flex justify-between">
+                    <span>0 completed</span><span>0%</span>
+                </p>
+            </div>
+            <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+                <p class="text-gray-400 text-sm">Total Marks</p>
+                <p id="total-marks" class="text-5xl font-semibold text-white mt-2">870</p>
+                <p id="marks-completed" class="text-emerald-400 text-sm font-medium mt-6">0 marks completed</p>
+            </div>
+            <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+                <p class="text-gray-400 text-sm">High Yield Topics</p>
+                <p id="high-priority-count" class="text-5xl font-semibold text-amber-400 mt-2">12</p>
+                <p class="text-xs text-amber-400/80 mt-6">Master these to cover most repeated questions</p>
+            </div>
+        </div>
+
+        <!-- FILTERS -->
+        <div id="filters-section" class="bg-gray-900 border border-gray-800 rounded-3xl p-6 mb-8">
+            <div class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[280px]">
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Search Question</label>
+                    <input id="search-input" type="text" placeholder="Search any keyword..." 
+                           onkeyup="applyFilters()" 
+                           class="w-full bg-gray-800 border border-gray-700 focus:border-amber-400 rounded-2xl py-4 pl-6 text-white placeholder:text-gray-500">
+                </div>
+                <div class="min-w-[140px]">
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Module</label>
+                    <select id="module-filter" onchange="applyFilters()" 
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-2xl py-4 px-5 outline-none">
+                        <option value="">All Modules</option>
+                        <option value="1">Module 1</option>
+                        <option value="2">Module 2</option>
+                        <option value="3">Module 3</option>
+                        <option value="4">Module 4</option>
+                        <option value="5">Module 5</option>
+                    </select>
+                </div>
+                <div class="min-w-[140px]">
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Marks</label>
+                    <select id="marks-filter" onchange="applyFilters()" 
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-2xl py-4 px-5 outline-none">
+                        <option value="">All Marks</option>
+                        <option value="3">3 marks</option>
+                        <option value="4">4 marks</option>
+                        <option value="5">5 marks</option>
+                        <option value="6">6 marks</option>
+                        <option value="7">7 marks</option>
+                        <option value="8">8 marks</option>
+                        <option value="9">9 marks</option>
+                        <option value="10">10 marks</option>
+                    </select>
+                </div>
+                <button onclick="clearFilters()" 
+                        class="px-8 py-4 text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 rounded-2xl text-sm font-medium transition-colors">
+                    Clear Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="bg-gray-900 border border-gray-800 rounded-3xl overflow-hidden">
+            <table class="w-full" id="questions-table">
+                <thead>
+                    <tr class="border-b border-gray-800">
+                        <th class="text-left py-5 px-8 font-medium text-gray-400 text-sm w-12">STATUS</th>
+                        <th class="text-left py-5 px-8 font-medium text-gray-400 text-sm">QUESTION</th>
+                        <th class="text-left py-5 px-8 font-medium text-gray-400 text-sm w-20">MODULE</th>
+                        <th class="text-left py-5 px-8 font-medium text-gray-400 text-sm w-20">MARKS</th>
+                        <th class="text-left py-5 px-8 font-medium text-gray-400 text-sm">DETAILS</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body" class="text-sm divide-y divide-gray-800"></tbody>
+            </table>
+        </div>
+
+        <div class="flex justify-between items-center mt-6 text-xs text-gray-500 px-2">
+            <div id="filtered-count">Showing all questions</div>
+            <div>Progress saved automatically in your browser</div>
+        </div>
+    </div>
+
+    <script>
+        // ====================== ALL QUESTIONS (150) ======================
+        let allQuestions = [
+            { id: 1, module: 1, marks: 3, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Differentiate between Entrepreneur and Intrapreneur", completed: false },
+            { id: 2, module: 1, marks: 3, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Explain the need for entrepreneurial development programmes", completed: false },
+            { id: 3, module: 2, marks: 3, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "State the advantages of partnership companies", completed: false },
+            { id: 4, module: 2, marks: 3, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Comment on: In proprietorship form of business, both entrepreneur and manager are the same person", completed: false },
+            { id: 5, module: 3, marks: 3, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "What are the needs for institutional networking in enterprise setting", completed: false },
+            { id: 6, module: 3, marks: 3, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Explain the role of non-government institutions in supporting entrepreneurship development", completed: false },
+            { id: 7, module: 4, marks: 3, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "List the steps associated with project identification", completed: false },
+            { id: 8, module: 4, marks: 3, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Explain the criteria to be followed while performing project selection", completed: false },
+            { id: 9, module: 5, marks: 3, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Explain the key objectives of management of enterprises", completed: false },
+            { id: 10, module: 5, marks: 3, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Differentiate between shares and debentures", completed: false },
+            { id: 11, module: 1, marks: 8, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Explain the requirements for being a successful entrepreneur", completed: false },
+            { id: 12, module: 1, marks: 6, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Illustrate government policy actions towards entrepreneurial motivation", completed: false },
+            { id: 13, module: 1, marks: 4, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Compare rural and urban entrepreneurship", completed: false },
+            { id: 14, module: 1, marks: 10, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Discuss entrepreneurial motivational theories", completed: false },
+            { id: 15, module: 2, marks: 6, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Describe the role of small enterprises in the economic development of a country", completed: false },
+            { id: 16, module: 2, marks: 8, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Illustrate the impact of cooperative societies in rural India", completed: false },
+            { id: 17, module: 2, marks: 6, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Classify the ownership structures associated with entrepreneurship", completed: false },
+            { id: 18, module: 2, marks: 8, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Summarize how Small-Scale Industries help in entrepreneurship development", completed: false },
+            { id: 19, module: 3, marks: 8, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Discuss any four central government supporting institutions", completed: false },
+            { id: 20, module: 3, marks: 6, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Examine the role of technical consultancy organizations in entrepreneurship development", completed: false },
+            { id: 21, module: 3, marks: 6, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Describe different promotional schemes for women entrepreneurship", completed: false },
+            { id: 22, module: 3, marks: 8, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Explain Government incentives for promotion of entrepreneurship in India", completed: false },
+            { id: 23, module: 4, marks: 6, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Explain the need for network analysis in project management", completed: false },
+            { id: 24, module: 4, marks: 8, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Describe any two methods of network analysis used in project management", completed: false },
+            { id: 25, module: 4, marks: 8, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Demonstrate Net Present Value method and Internal Rate of Return method with an example", completed: false },
+            { id: 26, module: 4, marks: 6, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Explain different stages of project appraisal", completed: false },
+            { id: 27, module: 5, marks: 6, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Elaborate the principles underlying scientific management", completed: false },
+            { id: 28, module: 5, marks: 8, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Explain the steps involved in raising and managing capital for a business at an operational level", completed: false },
+            { id: 29, module: 5, marks: 6, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Write short notes on Break even analysis and balance sheet analysis", completed: false },
+            { id: 30, module: 5, marks: 8, paper: "Aug 2024 (Supplementary)", repetition: 1, question: "Describe the different process involved in recruitment and selection process in an enterprise", completed: false },
+            { id: 31, module: 1, marks: 3, paper: "Jun 2023 (Regular)", repetition: 1, question: "What is the support for innovation and entrepreneurship from Government of India?", completed: false },
+            { id: 32, module: 1, marks: 3, paper: "Jun 2023 (Regular)", repetition: 1, question: "Which are the important criteria that GEDI adopts to release Global Entrepreneurship Index of various countries?", completed: false },
+            { id: 33, module: 2, marks: 3, paper: "Jun 2023 (Regular)", repetition: 1, question: "What are the different types of cooperative society?", completed: false },
+            { id: 34, module: 2, marks: 3, paper: "Jun 2023 (Regular)", repetition: 1, question: "Which are the various types of private limited companies?", completed: false },
+            { id: 35, module: 3, marks: 3, paper: "Jun 2023 (Regular)", repetition: 1, question: "Describe any three central government projects providing institutional support towards the development of entrepreneurship in India", completed: false },
+            { id: 36, module: 3, marks: 3, paper: "Jun 2023 (Regular)", repetition: 1, question: "Enlist the important government schemes for women entrepreneurship", completed: false },
+            { id: 37, module: 4, marks: 3, paper: "Jun 2023 (Regular)", repetition: 1, question: "What is a project report? What it consists of?", completed: false },
+            { id: 38, module: 4, marks: 3, paper: "Jun 2023 (Regular)", repetition: 1, question: "Give the structure of a project design", completed: false },
+            { id: 39, module: 5, marks: 3, paper: "Jun 2023 (Regular)", repetition: 1, question: "Explain raising and managing capital", completed: false },
+            { id: 40, module: 5, marks: 3, paper: "Jun 2023 (Regular)", repetition: 1, question: "What does the term 'job requirement' mean?", completed: false },
+            { id: 41, module: 1, marks: 10, paper: "Jun 2023 (Regular)", repetition: 1, question: "Describe the types of entrepreneurs. Which one do you think most suitable for India?", completed: false },
+            { id: 42, module: 1, marks: 4, paper: "Jun 2023 (Regular)", repetition: 2, question: "Explain McClelland achievement and acquired needs theory", completed: false },
+            { id: 43, module: 1, marks: 10, paper: "Jun 2023 (Regular)", repetition: 1, question: "Present the major points of distinction between an entrepreneur and a manager", completed: false },
+            { id: 44, module: 1, marks: 4, paper: "Jun 2023 (Regular)", repetition: 2, question: "Explain Maslow's need hierarchy theory of motivation", completed: false },
+            { id: 45, module: 2, marks: 10, paper: "Jun 2023 (Regular)", repetition: 1, question: "Describe the characteristics of SSI", completed: false },
+            { id: 46, module: 2, marks: 4, paper: "Jun 2023 (Regular)", repetition: 1, question: "Write the advantages of partnership", completed: false },
+            { id: 47, module: 2, marks: 6, paper: "Jun 2023 (Regular)", repetition: 1, question: "What is sole proprietorship? Write its features and disadvantages", completed: false },
+            { id: 48, module: 2, marks: 8, paper: "Jun 2023 (Regular)", repetition: 1, question: "Explain micro-small and medium enterprises (SMEs) in India and the role of MSMEs in India", completed: false },
+            { id: 49, module: 3, marks: 9, paper: "Jun 2023 (Regular)", repetition: 1, question: "Describe about the institutional support system towards the development of entrepreneurship in India by the Central Government", completed: false },
+            { id: 50, module: 3, marks: 5, paper: "Jun 2023 (Regular)", repetition: 1, question: "What are the benefits of entrepreneurial networks?", completed: false },
+            { id: 51, module: 3, marks: 9, paper: "Jun 2023 (Regular)", repetition: 1, question: "What are the advantages of providing incentives to entrepreneurs", completed: false },
+            { id: 52, module: 3, marks: 5, paper: "Jun 2023 (Regular)", repetition: 1, question: "Write about the advantages & disadvantages of business networking", completed: false },
+            { id: 53, module: 4, marks: 7, paper: "Jun 2023 (Regular)", repetition: 1, question: "What are the merits and demerits of critical path method?", completed: false },
+            { id: 54, module: 4, marks: 7, paper: "Jun 2023 (Regular)", repetition: 1, question: "Distinguish between PERT and CPM of network techniques", completed: false },
+            { id: 55, module: 4, marks: 10, paper: "Jun 2023 (Regular)", repetition: 1, question: "What is project evaluation and what are the various evaluation methods? Explain any two methods", completed: false },
+            { id: 56, module: 4, marks: 4, paper: "Jun 2023 (Regular)", repetition: 1, question: "What are the benefits of project evaluation?", completed: false },
+            { id: 57, module: 5, marks: 9, paper: "Jun 2023 (Regular)", repetition: 1, question: "What is working capital? Why is it important for any enterprise? Explain", completed: false },
+            { id: 58, module: 5, marks: 5, paper: "Jun 2023 (Regular)", repetition: 1, question: "Discuss, with suitable examples, the functions of modern marketing", completed: false },
+            { id: 59, module: 5, marks: 7, paper: "Jun 2023 (Regular)", repetition: 1, question: "Explain the objectives and functions of management", completed: false },
+            { id: 60, module: 5, marks: 7, paper: "Jun 2023 (Regular)", repetition: 1, question: "Write short notes on training, recruitment and selection", completed: false },
+            { id: 61, module: 1, marks: 3, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "What distinguishes an entrepreneur from other business professionals?", completed: false },
+            { id: 62, module: 1, marks: 3, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain any one motivation theory in detail", completed: false },
+            { id: 63, module: 2, marks: 3, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Differentiate between small scale, medium-scale, and large-scale enterprises", completed: false },
+            { id: 64, module: 2, marks: 3, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Describe the characteristics of cooperative enterprises", completed: false },
+            { id: 65, module: 3, marks: 3, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "What strategies have been implemented to address the challenges faced by rural entrepreneurs in India?", completed: false },
+            { id: 66, module: 3, marks: 3, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain about the institutions and centres administered by SIDO", completed: false },
+            { id: 67, module: 4, marks: 3, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "How does project identification differ in the public and private sectors?", completed: false },
+            { id: 68, module: 4, marks: 3, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Why is project evaluation an essential step in the project management lifecycle?", completed: false },
+            { id: 69, module: 5, marks: 3, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain the concept of job analysis and its role in matching the right talent to specific job roles", completed: false },
+            { id: 70, module: 5, marks: 3, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Differentiate between shares, bonds and debentures", completed: false },
+            { id: 71, module: 1, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain Maslow's and McClelland's need theory", completed: false },
+            { id: 72, module: 1, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Write notes on rural and urban entrepreneurship", completed: false },
+            { id: 73, module: 1, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain the role of Entrepreneurial Development Programme (EDP)", completed: false },
+            { id: 74, module: 1, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Examine the growth of entrepreneurship in India over the past decade", completed: false },
+            { id: 75, module: 2, marks: 6, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain the various types of ownership available to entrepreneurs. Discuss each form in brief", completed: false },
+            { id: 76, module: 2, marks: 8, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain the capital structure of limited companies, including the issuance of shares and types of shares. How do limited companies raise capital?", completed: false },
+            { id: 77, module: 2, marks: 6, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain the process of forming a sole proprietorship", completed: false },
+            { id: 78, module: 2, marks: 8, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Discuss the formation, governance, and capital structure of a partnership business", completed: false },
+            { id: 79, module: 3, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain the functions of various Non Government Institutions", completed: false },
+            { id: 80, module: 3, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Write a short note on women entrepreneurs with examples", completed: false },
+            { id: 81, module: 3, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "How has the regulatory environment in India evolved to facilitate entrepreneurship, and what reforms have been introduced in recent years?", completed: false },
+            { id: 82, module: 3, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain the various women entrepreneurship schemes of the government in detail", completed: false },
+            { id: 83, module: 4, marks: 8, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Analyse investment using NPV method: Arun needs Rs.1000 now and will pay back Rs.1350 in a year at 10% per year. Is that a good investment? Justify", completed: false },
+            { id: 84, module: 4, marks: 6, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain the significance of market analysis in project report and its impact on project formulation", completed: false },
+            { id: 85, module: 4, marks: 6, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Explain Internal Rate of Return (IRR) and Net Present Value (NPV) method", completed: false },
+            { id: 86, module: 4, marks: 8, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "How can network analysis techniques like CPM and PERT be applied in project planning?", completed: false },
+            { id: 87, module: 5, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "Discuss the significance of marketing in the growth and sustainability of an enterprise", completed: false },
+            { id: 88, module: 5, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "What is break-even analysis, and how does it help enterprises determine profitability and risk levels?", completed: false },
+            { id: 89, module: 5, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "How does the process of workforce planning contribute to effective human resource management?", completed: false },
+            { id: 90, module: 5, marks: 7, paper: "Oct 2023 (Supplementary)", repetition: 1, question: "How can balance sheet analysis aid in assessing an enterprise's financial health and identifying areas for improvement?", completed: false },
+            { id: 91, module: 1, marks: 3, paper: "Apr 2025 (Regular)", repetition: 1, question: "What is the difference between an entrepreneur and an intrapreneur?", completed: false },
+            { id: 92, module: 1, marks: 3, paper: "Apr 2025 (Regular)", repetition: 1, question: "Brief the significance of entrepreneurship development programmes", completed: false },
+            { id: 93, module: 2, marks: 3, paper: "Apr 2025 (Regular)", repetition: 1, question: "What are limited companies?", completed: false },
+            { id: 94, module: 2, marks: 3, paper: "Apr 2025 (Regular)", repetition: 1, question: "How is proprietorship different from partnership?", completed: false },
+            { id: 95, module: 3, marks: 3, paper: "Apr 2025 (Regular)", repetition: 1, question: "Write notes on technical consultancy organizations", completed: false },
+            { id: 96, module: 3, marks: 3, paper: "Apr 2025 (Regular)", repetition: 1, question: "How is women entrepreneurship important for development of the society?", completed: false },
+            { id: 97, module: 4, marks: 3, paper: "Apr 2025 (Regular)", repetition: 1, question: "List out the elements of project formulation", completed: false },
+            { id: 98, module: 4, marks: 3, paper: "Apr 2025 (Regular)", repetition: 1, question: "What are the various steps involved in project appraisal?", completed: false },
+            { id: 99, module: 5, marks: 3, paper: "Apr 2025 (Regular)", repetition: 1, question: "List out the functions of a management", completed: false },
+            { id: 100, module: 5, marks: 3, paper: "Apr 2025 (Regular)", repetition: 1, question: "What are bonds?", completed: false },
+            { id: 101, module: 1, marks: 8, paper: "Apr 2025 (Regular)", repetition: 1, question: "In detail, explain about the growth of entrepreneurship in India, post-independence", completed: false },
+            { id: 102, module: 1, marks: 6, paper: "Apr 2025 (Regular)", repetition: 1, question: "Discuss about rural and urban entrepreneurship", completed: false },
+            { id: 103, module: 1, marks: 7, paper: "Apr 2025 (Regular)", repetition: 1, question: "Discuss about the McClelland's acquired need theory", completed: false },
+            { id: 104, module: 1, marks: 7, paper: "Apr 2025 (Regular)", repetition: 1, question: "What is the significance of Entrepreneurial development programmes?", completed: false },
+            { id: 105, module: 2, marks: 7, paper: "Apr 2025 (Regular)", repetition: 1, question: "Explain about the various types of enterprises and their ownership structure", completed: false },
+            { id: 106, module: 2, marks: 7, paper: "Apr 2025 (Regular)", repetition: 1, question: "What are the disadvantages in sole proprietorship?", completed: false },
+            { id: 107, module: 2, marks: 7, paper: "Apr 2025 (Regular)", repetition: 1, question: "Discuss the role of Co-operatives in societal development", completed: false },
+            { id: 108, module: 2, marks: 7, paper: "Apr 2025 (Regular)", repetition: 1, question: "How does MSMEs contribute to economic development?", completed: false },
+            { id: 109, module: 3, marks: 8, paper: "Apr 2025 (Regular)", repetition: 1, question: "What are the various policies and incentives of the Indian Government towards institute setting?", completed: false },
+            { id: 110, module: 3, marks: 6, paper: "Apr 2025 (Regular)", repetition: 1, question: "What are the schemes of the government for promoting women entrepreneurship?", completed: false },
+            { id: 111, module: 3, marks: 8, paper: "Apr 2025 (Regular)", repetition: 1, question: "Explain about the development of women entrepreneurship in India, with examples", completed: false },
+            { id: 112, module: 3, marks: 6, paper: "Apr 2025 (Regular)", repetition: 1, question: "What are the district level institutes set up for supporting entrepreneurs?", completed: false },
+            { id: 113, module: 4, marks: 8, paper: "Apr 2025 (Regular)", repetition: 1, question: "What are the various methods of project evaluation?", completed: false },
+            { id: 114, module: 4, marks: 6, paper: "Apr 2025 (Regular)", repetition: 1, question: "What are the various phases in the life cycle of a project?", completed: false },
+            { id: 115, module: 4, marks: 8, paper: "Apr 2025 (Regular)", repetition: 1, question: "Compare internal rate of return method and net present value method", completed: false },
+            { id: 116, module: 4, marks: 6, paper: "Apr 2025 (Regular)", repetition: 1, question: "Compare PERT and CPM methods of project analysis", completed: false },
+            { id: 117, module: 5, marks: 7, paper: "Apr 2025 (Regular)", repetition: 1, question: "In detail, explain about the different types of management", completed: false },
+            { id: 118, module: 5, marks: 7, paper: "Apr 2025 (Regular)", repetition: 1, question: "How is recruitment carried out by the management?", completed: false },
+            { id: 119, module: 5, marks: 7, paper: "Apr 2025 (Regular)", repetition: 1, question: "Explain balance sheet analysis", completed: false },
+            { id: 120, module: 5, marks: 7, paper: "Apr 2025 (Regular)", repetition: 1, question: "What are the various methods of raising capital in an organization?", completed: false },
+            { id: 121, module: 1, marks: 3, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "How does a manager differ from an entrepreneur", completed: false },
+            { id: 122, module: 1, marks: 3, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain different Types of entrepreneurs", completed: false },
+            { id: 123, module: 2, marks: 3, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Describe the purpose of a partnership deed", completed: false },
+            { id: 124, module: 2, marks: 3, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain the structure of co-operative society", completed: false },
+            { id: 125, module: 3, marks: 3, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Discuss various functions of NABARD", completed: false },
+            { id: 126, module: 3, marks: 3, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "List the women entrepreneurial development schemes in India", completed: false },
+            { id: 127, module: 4, marks: 3, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain the different stages of project design", completed: false },
+            { id: 128, module: 4, marks: 3, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain why project evaluation is important", completed: false },
+            { id: 129, module: 5, marks: 3, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "What are the key management functions in relation to entrepreneurship", completed: false },
+            { id: 130, module: 5, marks: 3, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain the need for human resource planning", completed: false },
+            { id: 131, module: 1, marks: 6, paper: "May 2024 (Regular/Supplementary)", repetition: 2, question: "Explain Maslow's need hierarchy theory of motivation", completed: false },
+            { id: 132, module: 1, marks: 8, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain the growth of Entrepreneurship in India", completed: false },
+            { id: 133, module: 1, marks: 8, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Describe Entrepreneurship development programs", completed: false },
+            { id: 134, module: 1, marks: 6, paper: "May 2024 (Regular/Supplementary)", repetition: 2, question: "Explain McClelland achievement and acquired needs theory", completed: false },
+            { id: 135, module: 2, marks: 8, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Examine the role of small-scale industries in Indian economy", completed: false },
+            { id: 136, module: 2, marks: 6, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "List the features of limited companies", completed: false },
+            { id: 137, module: 2, marks: 8, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Classify different types of business ownerships", completed: false },
+            { id: 138, module: 2, marks: 6, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain the various sources of finance in cooperative society", completed: false },
+            { id: 139, module: 3, marks: 8, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain the challenges faced by women in starting and successfully running an enterprise", completed: false },
+            { id: 140, module: 3, marks: 6, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Write short notes on government policies to foster entrepreneurship", completed: false },
+            { id: 141, module: 3, marks: 8, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Outline the specific government programs implemented in India aimed at stimulating and supporting the start-up ecosystem", completed: false },
+            { id: 142, module: 3, marks: 6, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Describe any three state government institutions created for supporting entrepreneurship", completed: false },
+            { id: 143, module: 4, marks: 8, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain different steps involved in project formulation", completed: false },
+            { id: 144, module: 4, marks: 6, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain the comprehensive components that should be incorporated into a project report to ensure its effectiveness and clarity", completed: false },
+            { id: 145, module: 4, marks: 6, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Describe project network analysis techniques used in project management", completed: false },
+            { id: 146, module: 4, marks: 8, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Illustrate Net Present Value and Internal rate of return with an example", completed: false },
+            { id: 147, module: 5, marks: 8, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain the Process of strategic management and its benefits", completed: false },
+            { id: 148, module: 5, marks: 6, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Discuss the goals of marketing", completed: false },
+            { id: 149, module: 5, marks: 8, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Classify the Organizational dimension of enterprises", completed: false },
+            { id: 150, module: 5, marks: 6, paper: "May 2024 (Regular/Supplementary)", repetition: 1, question: "Explain different types of capital raising", completed: false }
+        ];
+
+        // ====================== HIGH YIELD MASTER QUESTIONS ======================
+        let highYieldQuestions = [
+            { id: 201, module: 3, marks: 8, covers: 9, question: "Discuss the importance of women entrepreneurship, the challenges faced by women entrepreneurs in India, and explain in detail the various government schemes and promotional measures for women entrepreneurship development with examples.", completed: false },
+            { id: 202, module: 4, marks: 8, covers: 9, question: "Explain the need and importance of network analysis in project management. Describe PERT and CPM methods, compare them, and explain their application in project planning.", completed: false },
+            { id: 203, module: 3, marks: 8, covers: 7, question: "Describe the various Central Government and State Government institutions providing institutional support for entrepreneurship development in India.", completed: false },
+            { id: 204, module: 4, marks: 8, covers: 7, question: "What are the different stages and methods of project evaluation? Explain any two methods (including NPV and IRR) with their merits and demerits.", completed: false },
+            { id: 205, module: 2, marks: 8, covers: 6, question: "Explain the characteristics, formation, structure, advantages, and role of cooperative societies in the economic and social development of rural India.", completed: false },
+            { id: 206, module: 5, marks: 8, covers: 6, question: "Explain the key objectives and major functions of management in an enterprise.", completed: false },
+            { id: 207, module: 3, marks: 8, covers: 6, question: "Discuss the various government policies, incentives, and schemes for promotion of entrepreneurship in India.", completed: false },
+            { id: 208, module: 1, marks: 8, covers: 5, question: "Explain the need, significance, and role of Entrepreneurship Development Programmes (EDP) in motivating and developing successful entrepreneurs.", completed: false },
+            { id: 209, module: 4, marks: 8, covers: 5, question: "Explain and compare Net Present Value (NPV) and Internal Rate of Return (IRR) methods of project appraisal with suitable numerical examples.", completed: false },
+            { id: 210, module: 2, marks: 8, covers: 5, question: "Classify and explain the various types of business ownership structures (Sole Proprietorship, Partnership, Limited Companies, Cooperatives, etc.) with their features.", completed: false },
+            { id: 211, module: 1, marks: 8, covers: 4, question: "Explain Maslow’s Need Hierarchy Theory and McClelland’s Acquired Need Theory of entrepreneurial motivation.", completed: false },
+            { id: 212, module: 2, marks: 8, covers: 5, question: "Compare Sole Proprietorship and Partnership forms of business. Discuss their features, advantages, and disadvantages.", completed: false }
+        ];
+
+        let currentTab = 0; // 0 = All, 1 = High Yield
+
+        function getCurrentQuestions() {
+            return currentTab === 0 ? allQuestions : highYieldQuestions;
+        }
+
+        function loadProgress() {
+            const key = currentTab === 0 ? 'ect474_all' : 'ect474_highyield';
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                const ids = JSON.parse(saved);
+                getCurrentQuestions().forEach(q => q.completed = ids.includes(q.id));
+            }
+        }
+
+        function saveProgress() {
+            const key = currentTab === 0 ? 'ect474_all' : 'ect474_highyield';
+            const ids = getCurrentQuestions().filter(q => q.completed).map(q => q.id);
+            localStorage.setItem(key, JSON.stringify(ids));
+        }
+
+        function calculateStats() {
+            const qs = getCurrentQuestions();
+            const completedCount = qs.filter(q => q.completed).length;
+            const totalMarks = qs.reduce((sum, q) => sum + q.marks, 0);
+            const completedMarks = qs.filter(q => q.completed).reduce((sum, q) => sum + q.marks, 0);
+            const progress = Math.round((completedCount / qs.length) * 100);
+
+            document.getElementById('total-questions').textContent = qs.length;
+            document.getElementById('total-marks').textContent = totalMarks;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-text').innerHTML = `<span>${completedCount} completed</span><span>${progress}%</span>`;
+            document.getElementById('marks-completed').innerHTML = `<span class="font-semibold">${completedMarks}</span> / ${totalMarks} marks completed`;
+            document.getElementById('high-priority-count').textContent = highYieldQuestions.length;
+        }
+
+        function renderTable(filtered) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-gray-400">No questions found.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(q => {
+                const row = document.createElement('tr');
+                row.className = `table-row ${q.completed ? 'completed' : ''}`;
+                
+                let detailCol = currentTab === 0 
+                    ? q.paper 
+                    : `<span class="high-yield-badge text-xs font-bold px-3 py-1 rounded-2xl">Covers ${q.covers} variants</span>`;
+
+                row.innerHTML = `
+                    <td class="py-5 px-8">
+                        <input type="checkbox" ${q.completed ? 'checked' : ''} 
+                               onchange="toggleComplete(${q.id}, this.checked)" 
+                               class="w-5 h-5 accent-amber-400 cursor-pointer">
+                    </td>
+                    <td class="py-5 px-8 pr-12">
+                        <div class="question-text leading-relaxed">${q.question}</div>
+                    </td>
+                    <td class="py-5 px-8 font-medium">Module ${q.module}</td>
+                    <td class="py-5 px-8 font-semibold text-amber-400">${q.marks}</td>
+                    <td class="py-5 px-8 text-gray-300">${detailCol}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function toggleComplete(id, checked) {
+            const qs = getCurrentQuestions();
+            const q = qs.find(item => item.id === id);
+            if (q) {
+                q.completed = checked;
+                saveProgress();
+                calculateStats();
+                applyFilters();
+            }
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+            const moduleFilter = document.getElementById('module-filter').value;
+            const marksFilter = document.getElementById('marks-filter').value;
+
+            const qs = getCurrentQuestions();
+            let filtered = qs.filter(q => {
+                const matchesSearch = !searchTerm || q.question.toLowerCase().includes(searchTerm);
+                const matchesModule = !moduleFilter || q.module.toString() === moduleFilter;
+                const matchesMarks = !marksFilter || q.marks.toString() === marksFilter;
+                return matchesSearch && matchesModule && matchesMarks;
+            });
+
+            renderTable(filtered);
+            document.getElementById('filtered-count').innerHTML = 
+                `Showing <span class="font-semibold text-white">${filtered.length}</span> of ${qs.length} questions`;
+        }
+
+        function clearFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('module-filter').value = '';
+            document.getElementById('marks-filter').value = '';
+            applyFilters();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tab-0').classList.toggle('tab-active', tab === 0);
+            document.getElementById('tab-1').classList.toggle('tab-active', tab === 1);
+
+            loadProgress();
+            calculateStats();
+            renderTable(getCurrentQuestions());
+        }
+
+        function resetAllProgress() {
+            if (confirm('Reset ALL progress for both All Questions and High Yield tabs?')) {
+                allQuestions.forEach(q => q.completed = false);
+                highYieldQuestions.forEach(q => q.completed = false);
+                localStorage.removeItem('ect474_all');
+                localStorage.removeItem('ect474_highyield');
+                calculateStats();
+                renderTable(getCurrentQuestions());
+            }
+        }
+
+        // ====================== INITIALIZE ======================
+        window.onload = function() {
+            // Replace this with your full 150 questions array
+            // allQuestions = [ ... your full array ... ];
+
+            loadProgress();
+            calculateStats();
+            renderTable(allQuestions);
+            console.log('%c✅ ECT474 Study Planner with High Yield tab & full filtering loaded', 'color:#f59e0b; font-weight:bold');
+        };
+    </script>
+</body>
+</html>
